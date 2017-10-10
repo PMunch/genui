@@ -1,5 +1,6 @@
 import macros
 import tables
+import sequtils
 
 type
   UICallback = proc()
@@ -16,9 +17,10 @@ type
   UserInterface = object
     widgets: OrderedTable[string, UIWidget]
     classes: Table[string, seq[string]]
+    members: Table[string, seq[string]]
 
 static:
-  var testUI = UserInterface(widgets: initOrderedTable[string, UIWidget](), classes: initTable[string, seq[string]]())
+  var testUI = UserInterface(widgets: initOrderedTable[string, UIWidget](), classes: initTable[string, seq[string]](), members: initTable[string, seq[string]]())
 
 macro getByName(name: static[string]): untyped =
   let sym = testUI.widgets[name].generatedSym
@@ -38,6 +40,9 @@ proc addToClasses(name: string, classes: seq[string]) {.compileTime.} =
         testUI.classes[class] = @[name]
       else:
         testUI.classes[class].add(name)
+    if not testUI.members.hasKey(name):
+      testUI.members[name] = @[]
+    testUI.members[name].insert(classes)
 
 macro createShowWidget(name: static[string], classes: static[seq[string]], arg: typed): untyped =
   testUI.widgets[name] =

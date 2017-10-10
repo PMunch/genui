@@ -1,8 +1,9 @@
 import macros
-#from karax/karax import nil
-#from karax/vdom import nil
-#from karax/karaxdsl import nil
-import karax / [karax, vdom, kdom, karaxdsl]
+from karax/karax import nil
+from karax/vdom import nil
+from karax/kdom import nil
+from karax/karaxdsl import nil
+#import karax / [karax, vdom, kdom, karaxdsl]
 from strutils import nil
 
 template initUI() =
@@ -12,24 +13,26 @@ macro createUI(): untyped =
   var innerblock = newStmtList()
   var layoutBlock = newStmtList()
   for pair in testUI.widgets.pairs:
-    var elem = pair[1]
+    let
+      id = pair[0]
+      elem = pair[1]
+      s1 = elem.generatedSym
+      s2 = elem.variableSym
+      classes = strutils.join(testUI.members[id], " ")
+      cb = elem.callback
     case elem.kind:
       of UIKind.call:
-        let
-          s1 = elem.generatedSym
-          s2 = elem.variableSym
-          cb = elem.callback
         case elem.variableType:
           of ntyString, ntyInt:
             var cbBlock = newStmtList()
             if cb != nil:
               cbBlock.add(quote do:
-                addEventHandler(`s1`, EventKind.onclick, `cb`, kxi)
+                karax.addEventHandler(`s1`, vdom.EventKind.onclick, `cb`, karax.kxi)
               )
             innerblock.add(quote do:
-              var `s1` = tree(VNodeKind.button)
+              var `s1` = vdom.tree(vdom.VNodeKind.button)
               `cbBlock`
-              add(`s1`, text($`s2`))
+              vdom.add(`s1`, vdom.text($`s2`))
             )
             layoutblock.add(quote do:
               tdiv(`s1`)
@@ -37,25 +40,20 @@ macro createUI(): untyped =
           else:
             discard
       of UIKind.edit:
-        let
-          s1 = elem.generatedSym
-          s2 = elem.variableSym
-          id = pair[0]
-          cb = elem.callback
         case elem.variableType:
           of ntyString:
             var cbBlock = newStmtList()
             if cb != nil:
               cbBlock.add(quote do:
-                addEventHandler(`s1`, EventKind.oninput, `cb`, kxi)
+                karax.addEventHandler(`s1`, vdom.EventKind.oninput, `cb`, karax.kxi)
               )
             innerblock.add(quote do:
-              var `s1` = tree(VNodeKind.input)
-              `s1`.value = `s2`
+              var `s1` = vdom.tree(vdom.VNodeKind.input)
+              `s1`.text = `s2`
               `cbBlock`
-              addEventHandler(`s1`, EventKind.oninput, proc (ev: Event, n: VNode) =
-                `s2` = $n.value
-              , kxi)
+              karax.addEventHandler(`s1`, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
+                `s2` = $vdom.value(n)
+              , karax.kxi)
             )
             layoutblock.add(quote do:
               tdiv(`s1`)
@@ -64,25 +62,31 @@ macro createUI(): untyped =
             var cbBlock = newStmtList()
             if cb != nil:
               cbBlock.add(quote do:
-                addEventHandler(`s1`, EventKind.oninput, `cb`, kxi)
+                karax.addEventHandler(`s1`, vdom.EventKind.oninput, `cb`, karax.kxi)
               )
+            let kdomValueSet = nnkDotExpr.newTree(
+              newIdentNode(!"kdom"),
+              nnkAccQuoted.newTree(
+                newIdentNode(!"value"),
+                newIdentNode(!"=")
+              )
+            )
             innerblock.add(quote do:
-              var `s1` = tree(VNodeKind.input)
-              `s1`.value = $`s2`
-              `s1`.setAttr("id", `id`)
-              `s1`.setAttr("type", "number")
-              `s1`.setAttr("step", "1")
+              var `s1` = vdom.tree(vdom.VNodeKind.input)
+              `s1`.text = $`s2`
+              vdom.setAttr(`s1`, "type", "number")
+              vdom.setAttr(`s1`, "step", "1")
               `cbBlock`
-              addEventHandler(`s1`, EventKind.oninput, proc (ev: Event, n: VNode) =
+              karax.addEventHandler(`s1`, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
                 try:
-                  `s2` = strutils.parseInt($n.value)
+                  `s2` = strutils.parseInt($vdom.value(n))
                 except ValueError:
                   try:
-                    `s2` = strutils.parseFloat($n.value).int
+                    `s2` = strutils.parseFloat($vdom.value(n)).int
                   except ValueError:
                     `s2` = 0
-                  document.getElementById(`id`).value = $`s2`
-              , kxi)
+                  `kdomValueSet`(kdom.getElementById(kdom.document,`id`), $`s2`)
+              , karax.kxi)
             )
             layoutblock.add(quote do:
               tdiv(`s1`)
@@ -91,21 +95,22 @@ macro createUI(): untyped =
       of UIKind.show:
         case elem.variableType:
           of ntyInt, ntyFloat, ntyString:
-            let
-              s1 = elem.generatedSym
-              s2 = elem.variableSym
             innerblock.add(quote do:
-              var `s1` = text($`s2`)
+              var `s1` = vdom.tree(vdom.VNodeKind.tdiv, vdom.text($`s2`))
             )
             layoutblock.add(quote do:
-              tdiv(`s1`)
+              `s1`
             )
           else:
             discard
+    innerblock.add(quote do:
+      vdom.setAttr(`s1`, "id", `id`)
+      vdom.setAttr(`s1`, "class", `classes`)
+    )
   result = quote do:
     proc createDom(): vdom.VNode =
       `innerblock`
-      return buildHtml(tdiv):
+      return karaxdsl.buildHtml(tdiv):
         `layoutblock`
   echo result.toStrLit
 
