@@ -18,16 +18,16 @@ type
   UILayout = object
     root: UIContainer
 
-static:
-  var testLayout = UILayout(root: nil)
+#static:
+#  var testLayout = UILayout(root: nil)
 
-#proc initUILayout(): UILayout {.compileTime.} =
-#  UILayout(root: nil)
+proc initUILayout(): UILayout {.compileTime.} =
+  UILayout(root: nil)
 
-proc addRow(expand: bool): UIContainer {.compileTime.} =
-  assert(testLayout.root == nil, "Cannot add more than one row to the root of a layout")
+proc addRow(layout: var UILayout, expand: bool): UIContainer {.compileTime.} =
+  assert(layout.root == nil, "Cannot add more than one row to the root of a layout")
   result = UIContainer(children: @[], kind: Row, expand: expand, usedSize: 0)
-  testLayout.root = result
+  layout.root = result
 
 proc addRow(layout: var UIContainer, expand: bool): UIContainer {.compileTime.} =
   assert(layout.kind == Column, "Rows must be added to columns")
@@ -41,6 +41,6 @@ proc addColumn(layout: var UIContainer, width: range[1..12], scroll: bool): UICo
   layout.usedSize += width
   layout.children.add(result)
 
-proc addWidget(layout: var UIContainer, widget: NimNode) {.compileTime.} =
-  assert(layout.kind == Column, "Widgets can only be added to columns")
+macro addWidget(layout: static[var UIContainer], widget: untyped): untyped =
+  #assert(layout.kind == Column, "Widgets can only be added to columns")
   layout.children.add(UIContainer(children: nil, kind: Widget, widget: widget))

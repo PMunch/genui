@@ -8,12 +8,12 @@ var
   label = newLabel("Hello world")
   button = newButton("Hi there")
 
-static:
-  var
-    row1 = addRow(true)
-    col1 = row1.addColumn(6,false)
-    col2 = row1.addColumn(6,false)
-  col1.addWidget(label)
-  col2.addWidget(button)
-createLayout()
+var
+  layout {.compileTime.} = initUILayout()
+  row1 {.compileTime.} = layout.addRow(true)
+  col1 {.compileTime.} = row1.addColumn(6,false)
+  col2 {.compiletime.}  = row1.addColumn(6,false)
+col1.addWidget(label)
+col2.addWidget(button)
+layout.createLayout()
 gtk.main()

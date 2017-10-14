@@ -57,6 +57,7 @@ macro createUI(after: untyped = nil): untyped =
           of ntyInt, ntyFloat, ntyString:
             result.add(quote do:
               var `s1` = gtk.newLabel(cstring($`s2`))
+              gtk.setXalign(`s1`, 0)
               gtk.add(`boxSym`, `s1`)
             )
             postCallbackUpdates.add(quote do:
