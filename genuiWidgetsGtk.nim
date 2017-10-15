@@ -10,17 +10,12 @@ macro createUI(after: untyped = nil): untyped =
   result = newStmtList()
   var callbackList = newStmtList()
   var postCallbackUpdates = newStmtList()
-  let
-    windowSym = genSym(nskLet)
-    boxSym = genSym(nskLet)
   result.add(quote do:
     proc setValue(label: gtk.Label, value: string) =
       gtk.setText(label, cstring(value))
     proc setValue(button: gtk.Button, value: string) =
       gtk.setLabel(button, cstring(value))
     proc postCallbackUpdate()
-    let `windowSym` = gtk.newWindow()
-    let `boxSym` = gtk.newBox(gtk.Orientation.VERTICAL, 5)
   )
   for pair in testUI.widgets.pairs:
     let
@@ -41,7 +36,6 @@ macro createUI(after: untyped = nil): untyped =
               )
             result.add(quote do:
               var `s1` = gtk.newButton($`s2`)
-              gtk.add(`boxSym`, `s1`)
               discard gobject.gSignalConnect(`s1`, "clicked", gobject.gCALLBACK(
                 proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
                   `cbBlock`
@@ -58,7 +52,6 @@ macro createUI(after: untyped = nil): untyped =
             result.add(quote do:
               var `s1` = gtk.newLabel(cstring($`s2`))
               gtk.setXalign(`s1`, 0)
-              gtk.add(`boxSym`, `s1`)
             )
             postCallbackUpdates.add(quote do:
               `s1`.setValue($`s2`)
@@ -76,7 +69,6 @@ macro createUI(after: untyped = nil): untyped =
             result.add(quote do:
               var `s1` = gtk.newEntry()
               gtk.setText(`s1`, `s2`)
-              gtk.add(`boxSym`, `s1`)
               discard gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
                 proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.} =
                   `s2` = $gtk.getText(`s1`)
@@ -96,7 +88,6 @@ macro createUI(after: untyped = nil): untyped =
             result.add(quote do:
               var `s1` = gtk.newSpinButton(cdouble(`s2`.low), cdouble(`s2`.high), 1)
               gtk.setValue(`s1`, cdouble(`s2`))
-              gtk.add(`boxSym`, `s1`)
               discard gobject.gSignalConnect(`s1`, "value-changed", gobject.gCALLBACK(
                 proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
                   `s2` = gtk.getValueAsInt(`s1`)
@@ -121,15 +112,6 @@ macro createUI(after: untyped = nil): untyped =
       )
   result.add(callbackList)
   result.add(quote do:
-    gtk.add(`windowSym`, `boxSym`)
-    gtk.showAll(`windowSym`)
-    discard gobject.gSignalConnect(`windowSym`, "destroy", gobject.gCALLBACK(gtk.mainQuit), nil)
-    discard gobject.gSignalConnect(`windowSym`, "size-allocate", gobject.gCALLBACK(
-      proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.} =
-        var w, h: cint
-        gtk.getSize(`windowSym`, w, h)
-        echo "Window resize (" & $w & ", " & $h & ")"
-    ), nil)
     proc postCallbackUpdate() =
       `postCallbackUpdates`
   )

@@ -115,8 +115,8 @@ macro createUI(after: untyped = nil): untyped =
     proc createDom(): vdom.VNode =
       `innerblock`
       `afterBlock`
-      return karaxdsl.buildHtml(tdiv):
-        `layoutblock`
+      #return karaxdsl.buildHtml(tdiv):
+      #  `layoutblock`
   echo result.toStrLit
 
 template startUI() =

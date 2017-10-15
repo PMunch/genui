@@ -1,8 +1,11 @@
 include genui
+include genuiLayout
 when defined(js):
+  include genuiLayoutKarax
   include genuiWidgetsKarax
   import karax / [karax, vdom]
 else:
+  include genuiLayoutGtk
   include genuiWidgetsGtk
   import oldgtk3/ [gtk, gdk, gio, gobject, glib]
 
@@ -56,5 +59,22 @@ createUI:
       discard button.gSignalConnect("clicked", gCallback(newCallback), nil)
     else:
       button.addEventHandler(EventKind.onclick, newCallback, kxi)
+  # Create a layout and add all the widgets to it
+  #when not defined(js):
+  var
+    layout {.compileTime.} = initUILayout()
+    row1 {.compileTime.} = layout.addRow(true)
+    col1 {.compileTime.} = row1.addColumn(6,false)
+    col2 {.compiletime.}  = row1.addColumn(6,false)
+  col1.addWidget(getByName("test"))
+  col1.addWidget(getByName("test1"))
+  col1.addWidget(getByName("test7"))
+  col1.addWidget(getByName("test2"))
+  col2.addWidget(getByName("test6"))
+  col2.addWidget(getByName("test3"))
+  col2.addWidget(getByName("test4"))
+  col2.addWidget(getByName("test8"))
+  col2.addWidget(getByName("test5"))
+  layout.createLayout()
 
 startUI()
