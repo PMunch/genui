@@ -7,4 +7,4 @@ The idea for this project is to create a system of macros that will allow Nim to
 
 In test2 you will find the simple structure that would be present in the project itself. It is simply a couple of types and a request to create a GUI based on those types. It also showcases how the output code can be extended with platform specific code and the layout system. The wrapper will then create callbacks and everything else to make the variables update and take input automatically, allowing the user to only focus on the actual application code.
 
-Next steps are to polish and organise the code a bit to make it easier to extend, create a DSL to more easily make the UI, and write code to generate more widgets.
+Next steps are to implement custom widgets for custom types, polish the UI creation code a bit to make it easier to extend, create a DSL to more easily make the UI, and write code to generate more widgets.
