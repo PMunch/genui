@@ -10,7 +10,8 @@ var
   a: int = 10
   b: float = 2.5
   str = "Hello, world"
-  tupl = (z: 10, x: "Hello")
+  tupl = (z: 1, x: "Hello")
+  options = @["Hello", "World"]
 
 # Create a simple little callback function
 proc test() =
@@ -47,6 +48,7 @@ createShowWidget("test7", @[], tupl.z)
 createShowWidget("test2", @[], b)
 createEditWidget("test6", @["test", "class"], tupl.z, test)
 createEditWidget("test9", @["test", "class"], tupl.z, test, @["Hello","World"])
+createEditWidget("test10", @["test", "class"], str, test, options)
 createEditWidget("test3", @[], str, nil)
 createCallWidget("test4", @["buttons"], str, test)
 createCallWidget("test8", @["buttons"], str, test)
@@ -68,6 +70,7 @@ col2.addWidget("test4")
 col2.addWidget("test8")
 col2.addWidget("test5")
 col2.addWidget("test9")
+col2.addWidget("test10")
 
 # Create the UI. Notice  that createUI takes a block which is guaranteed to be in the same scope as the generated UI code
 createUI:
@@ -75,6 +78,10 @@ createUI:
   proc newCallback() =
     echo "Hello from the new callback!"
     getByName("test1").show()
+    # Note that the options field will not update in Gtk until after another callback or an explicit call to postCallbackUpdate
+    options.add("Another option")
+    when not defined(js):
+      postCallbackUpdate()
   # Get all elements from a given class, type is automatically recognised based on compile target
   var buttons = getByClass("buttons")
   for button in buttons.mitems:

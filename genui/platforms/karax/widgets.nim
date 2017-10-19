@@ -25,6 +25,7 @@ macro createUI(after: untyped = nil): untyped =
       s2 = elem.variableSym
       classes = strutils.join(testUI.members[name], " ")
       cb = elem.callback
+      optionsSym = elem.optionsSym
     case elem.kind:
       of UIKind.call:
         case elem.variableType:
@@ -52,44 +53,85 @@ macro createUI(after: untyped = nil): untyped =
               cbBlock.add(quote do:
                 karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, `cb`, karax.kxi)
               )
-            innerblock.add(quote do:
-              `s1`.widget = vdom.tree(vdom.VNodeKind.input)
-              vdom.setAttr(`s1`.widget, "type", "text")
-              `s1`.widget.text = `s2`
-              if `s1`.active:
-                `cbBlock`
-              else:
-                vdom.setAttr(`s1`.widget, "disabled")
-              karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
-                `s2` = $vdom.value(n)
-              , karax.kxi)
-            )
+            if optionsSym == nil:
+              innerblock.add(quote do:
+                `s1`.widget = vdom.tree(vdom.VNodeKind.input)
+                vdom.setAttr(`s1`.widget, "type", "text")
+                `s1`.widget.text = `s2`
+                if `s1`.active:
+                  `cbBlock`
+                else:
+                  vdom.setAttr(`s1`.widget, "disabled")
+                karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
+                  `s2` = $vdom.value(n)
+                , karax.kxi)
+              )
+            else:
+              innerblock.add(quote do:
+                `s1`.widget = vdom.tree(vdom.VNodeKind.input)
+                vdom.setAttr(`s1`.widget, "type", "text")
+                vdom.setAttr(`s1`.widget, "list", `name` & "DataList")
+                var list = vdom.tree(vdom.VNodeKind.datalist)
+                vdom.setAttr(list, "id", `name` & "DataList")
+                for option in `optionsSym`:
+                  let opt = vdom.tree(vdom.VNodeKind.option)
+                  opt.add vdom.text(option)
+                  list.add opt
+                `s1`.widget.add list
+                if `s1`.active:
+                  `cbBlock`
+                else:
+                  vdom.setAttr(`s1`.widget, "disabled")
+                `s1`.widget.text = $`s2`
+                karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
+                  `s2` = $vdom.value(n)
+                , karax.kxi)
+              )
           of ntyInt:
             var cbBlock = newStmtList()
             if cb != nil:
               cbBlock.add(quote do:
                 karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, `cb`, karax.kxi)
               )
-            innerblock.add(quote do:
-              `s1`.widget = vdom.tree(vdom.VNodeKind.input)
-              `s1`.widget.text = $`s2`
-              vdom.setAttr(`s1`.widget, "type", "number")
-              vdom.setAttr(`s1`.widget, "step", "1")
-              if `s1`.active:
-                `cbBlock`
-              else:
-                vdom.setAttr(`s1`.widget, "disabled")
-              karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
-                try:
-                  `s2` = strutils.parseInt($vdom.value(n))
-                except ValueError:
+            if optionsSym == nil:
+              innerblock.add(quote do:
+                `s1`.widget = vdom.tree(vdom.VNodeKind.input)
+                `s1`.widget.text = $`s2`
+                vdom.setAttr(`s1`.widget, "type", "number")
+                vdom.setAttr(`s1`.widget, "step", "1")
+                if `s1`.active:
+                  `cbBlock`
+                else:
+                  vdom.setAttr(`s1`.widget, "disabled")
+                karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
                   try:
-                    `s2` = strutils.parseFloat($vdom.value(n)).int
+                    `s2` = strutils.parseInt($vdom.value(n))
                   except ValueError:
-                    `s2` = 0
-                  n.value = $`s2`
-              , karax.kxi)
-            )
+                    try:
+                      `s2` = strutils.parseFloat($vdom.value(n)).int
+                    except ValueError:
+                      `s2` = 0
+                    n.value = $`s2`
+                , karax.kxi)
+              )
+            else:
+              innerblock.add(quote do:
+                `s1`.widget = vdom.tree(vdom.VNodeKind.select)
+                for index, option in pairs(`optionsSym`):
+                  let opt = vdom.tree(vdom.VNodeKind.option)                  
+                  opt.add vdom.text(option)
+                  opt.text = $index
+                  `s1`.widget.add opt
+                `s1`.widget.text = $`s2`
+                if `s1`.active:
+                  `cbBlock`
+                else:
+                  vdom.setAttr(`s1`.widget, "disabled")
+                karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, proc(ev: kdom.Event, n: vdom.VNode) =
+                  # This should really be changed to selectedIndex somehow
+                  `s2` = strutils.parseInt($n.value)
+                , karax.kxi)
+              )
           else: discard
       of UIKind.show:
         case elem.variableType:

@@ -67,19 +67,45 @@ macro createUI(after: untyped = nil): untyped =
               cbBlock.add(quote do:
                 `cb`()
               )
-            result.add(quote do:
-              var `s1` = gtk.newEntry()
-              gtk.setText(`s1`, `s2`)
-              discard gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
-                proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.} =
-                  `s2` = $gtk.getText(`s1`)
-                  `cbBlock`
-                  postCallbackUpdate()
-              ), nil)
-            )
-            postCallbackUpdates.add(quote do:
-              gtk.setText(`s1`,$`s2`)
-            )
+            if optionsSym == nil:
+              result.add(quote do:
+                var `s1` = gtk.newEntry()
+                gtk.setText(`s1`, `s2`)
+                discard gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
+                  proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.} =
+                    `s2` = $gtk.getText(`s1`)
+                    `cbBlock`
+                    postCallbackUpdate()
+                ), nil)
+              )
+              postCallbackUpdates.add(quote do:
+                gtk.setText(`s1`,$`s2`)
+              )
+            else:
+              let signalSym = genSym(nskVar)
+              result.add(quote do:
+                var `s1` = gtk.newComboBoxTextWithEntry()
+                var active = -1
+                for index, text in pairs(`optionsSym`):
+                  if text == `s2`:
+                    active = index
+                  gtk.append(`s1`, nil, text)
+                gtk.setActive(`s1`, active.cint)
+                var `signalSym` = gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
+                  proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
+                    `s2` = $gtk.getActiveText(`s1`)
+                    `cbBlock`
+                    postCallbackUpdate()
+                ), nil)
+              )
+              postCallbackUpdates.add(quote do:
+                gobject.signalHandlerBlock(`s1`, `signalSym`)
+                gtk.removeAll(`s1`)
+                for text in `optionsSym`:
+                  gtk.append(`s1`, nil, text)
+                gtk.getChild(`s1`).Entry.setText(`s2`)
+                gobject.signalHandlerUnblock(`s1`, `signalSym`)
+              )
           of ntyInt:
             var cbBlock = newStmtList()
             if cb != nil:
@@ -101,12 +127,13 @@ macro createUI(after: untyped = nil): untyped =
                 gtk.setValue(`s1`,cdouble(`s2`))
               )
             else:
-              echo "Creating new Combo Box"
+              let signalSym = genSym(nskVar)
               result.add(quote do:
                 var `s1` = gtk.newComboBoxText()
                 for text in `optionsSym`:
                   gtk.append(`s1`, nil, text)
-                discard gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
+                gtk.setActive(`s1`,`s2`.cint)
+                var `signalSym` = gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
                   proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
                     `s2` = gtk.getActive(`s1`)
                     `cbBlock`
@@ -114,10 +141,12 @@ macro createUI(after: untyped = nil): untyped =
                 ), nil)
               )
               postCallbackUpdates.add(quote do:
+                gobject.signalHandlerBlock(`s1`, `signalSym`)
                 gtk.removeAll(`s1`)
                 for text in `optionsSym`:
                   gtk.append(`s1`, nil, text)
                 gtk.setActive(`s1`, `s2`.cint)
+                gobject.signalHandlerUnblock(`s1`, `signalSym`)
               )
           else:
             echo elem.variableType
