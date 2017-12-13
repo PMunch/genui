@@ -6,7 +6,7 @@ from oldgtk3/glib import nil
 template initUI() =
   gtk.initWithArgv()
 
-macro createUI(): untyped =
+macro createUI(after: untyped = nil): untyped =
   result = newStmtList()
   var callbackList = newStmtList()
   var postCallbackUpdates = newStmtList()
@@ -22,14 +22,16 @@ macro createUI(): untyped =
     let `windowSym` = gtk.newWindow()
     let `boxSym` = gtk.newBox(gtk.Orientation.VERTICAL, 5)
   )
-  for elem in testUI.widgets.values:
-    #echo elem.variableType.treeRepr
+  for pair in testUI.widgets.pairs:
+    let
+      name = pair[0]
+      elem = pair[1]
+      s1 = elem.generatedSym
+      s2 = elem.variableSym
+      classes = testUI.members[name]
+      cb = elem.callback
     case elem.kind:
       of UIKind.call:
-        let
-          s1 = elem.generatedSym
-          s2 = elem.variableSym
-          cb = elem.callback
         case elem.variableType:
           of ntyString, ntyInt:
             var cbBlock = newStmtList()
@@ -53,9 +55,6 @@ macro createUI(): untyped =
       of UIKind.show:
         case elem.variableType:
           of ntyInt, ntyFloat, ntyString:
-            let
-              s1 = elem.generatedSym
-              s2 = elem.variableSym
             result.add(quote do:
               var `s1` = gtk.newLabel(cstring($`s2`))
               gtk.add(`boxSym`, `s1`)
@@ -66,10 +65,6 @@ macro createUI(): untyped =
           else:
             echo elem.variableType
       of UIKind.edit:
-        let
-          s1 = elem.generatedSym
-          s2 = elem.variableSym
-          cb = elem.callback
         case elem.variableType:
           of ntyString:
             var cbBlock = newStmtList()
@@ -114,6 +109,15 @@ macro createUI(): untyped =
           else:
             echo elem.variableType
       else: continue
+    var context = genSym(nskVar)
+    result.add(quote do:
+      gtk.setName(`s1`, `name`)
+      var `context` = gtk.getStyleContext(`s1`);
+    )
+    for class in classes:
+      result.add(quote do:
+        gtk.addClass(`context`,`class`);
+      )
   result.add(callbackList)
   result.add(quote do:
     gtk.add(`windowSym`, `boxSym`)
@@ -122,6 +126,8 @@ macro createUI(): untyped =
     proc postCallbackUpdate() =
       `postCallbackUpdates`
   )
+  if after != nil:
+    result.add(after)
   echo result.toStrLit
 
 template startUI() =
