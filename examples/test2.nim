@@ -17,7 +17,6 @@ var
 proc test() =
   b = 10.3
   echo "Callback called!"
-  
 initUI()
 
 when not defined(js):
@@ -40,6 +39,15 @@ dumpTree:
       "test6" edit: tupl.z -> test / ["test", "class"]
     column(6):
       "test8" call: str -> test / ["buttons"]
+
+type
+  myType = distinct int
+proc myTypeWidget(widget: UIWidget): NimNode {.compileTime.} =
+  result = quote do:
+    echo "Hello world"
+  echo result.toStrLit
+var tt: myType = 5.myType
+registerCustomWidget(myTypeWidget, myType)
 
 # Creating our basic widgets and assigning them to classes for styling, some are also given a callback
 createShowWidget("test", @["red"], a)

@@ -15,13 +15,20 @@ type
     variableSym: NimNode
     optionsSym: NimNode
     callback: NimNode
+  UICustomWidget = proc(widget: UIWidget): NimNode
   UserInterface = object
     widgets: OrderedTable[string, UIWidget]
     classes: Table[string, seq[string]]
     members: Table[string, seq[string]]
+    customWidgets: Table[string, UICustomWidget]
 
 static:
-  var testUI = UserInterface(widgets: initOrderedTable[string, UIWidget](), classes: initTable[string, seq[string]](), members: initTable[string, seq[string]]())
+  var testUI =
+    UserInterface(
+      widgets: initOrderedTable[string, UIWidget](),
+      classes: initTable[string, seq[string]](),
+      members: initTable[string, seq[string]](),
+      customWidgets: initTable[string, UICustomWidget]())
 
 macro getByName(name: static[string]): untyped =
   let sym = testUI.widgets[name].generatedSym
@@ -43,6 +50,11 @@ proc addToClasses(name: string, classes: seq[string]) {.compileTime.} =
     if not testUI.members.hasKey(name):
       testUI.members[name] = @[]
     testUI.members[name].insert(classes)
+
+macro registerCustomWidget(arg2: static[UICustomWidget], arg: typed): untyped =
+  let customProc = arg2
+  echo $arg.getType.toStrLit
+  testUI.customWidgets[$arg.getType.toStrLit] = customProc
 
 macro createShowWidget(name: static[string], classes: static[seq[string]], arg: typed): untyped =
   testUI.widgets[name] =
