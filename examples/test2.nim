@@ -47,9 +47,13 @@ proc myTypeWidget(widget: UIWidget): NimNode {.compileTime.} =
     echo "Hello world"
   echo result.toStrLit
 var tt: myType = 5.myType
-registerCustomWidget(myTypeWidget, myType)
+registerCustomWidget(myType, showProc = (quote do:
+  for i in 0..100:
+    echo "Hello world"
+))
 
 # Creating our basic widgets and assigning them to classes for styling, some are also given a callback
+createShowWidget("test11", @[], tt)
 createShowWidget("test", @["red"], a)
 createShowWidget("test1", @[], a)
 createShowWidget("test7", @[], tupl.z)

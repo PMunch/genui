@@ -19,10 +19,10 @@ macro createUI(after: untyped = nil): untyped =
   )
   for pair in testUI.widgets.pairs:
     echo "Generating widget for " & pair[0]
-    if testUI.customWidgets.hasKey($pair[1].variableSym.getTypeInst.toStrLit):
-      echo "Custom Widget"
-      result.add(testUI.customWidgets[$pair[1].variableSym.getTypeInst.toStrLit](pair[1]))
-    else:
+    #if testUI.customWidgets.hasKey($pair[1].variableSym.getTypeInst.toStrLit):
+    #  echo "Custom Widget"
+    #  result.add(testUI.customWidgets[$pair[1].variableSym.getTypeInst.toStrLit](pair[1]))
+    if true:
       let
         name = pair[0]
         elem = pair[1]

@@ -15,7 +15,10 @@ type
     variableSym: NimNode
     optionsSym: NimNode
     callback: NimNode
-  UICustomWidget = proc(widget: UIWidget): NimNode
+  UICustomWidget = object
+    showProc: NimNode#proc(widget: UIWidget): NimNode
+    editProc: NimNode
+    callProc: NimNode
   UserInterface = object
     widgets: OrderedTable[string, UIWidget]
     classes: Table[string, seq[string]]
@@ -51,12 +54,19 @@ proc addToClasses(name: string, classes: seq[string]) {.compileTime.} =
       testUI.members[name] = @[]
     testUI.members[name].insert(classes)
 
-macro registerCustomWidget(arg2: static[UICustomWidget], arg: typed): untyped =
-  let customProc = arg2
-  echo $arg.getType.toStrLit
-  testUI.customWidgets[$arg.getType.toStrLit] = customProc
+macro registerCustomWidget(arg: typed, showProc: NimNode = nil, editProc: NimNode = nil, callProc: NimNode = nil): untyped =
+  if showProc == nil and editProc == nil and callProc == nil:
+    raise newException(AssertionError, "Can't register custom handler without any procedure")
+  echo "Adding \"" & $arg.getType[1].toStrLit & "\""
+  testUI.customWidgets[$arg.getType[1].toStrLit] = UICustomWidget(showProc: showProc, editProc: editProc, callProc: callProc)
 
 macro createShowWidget(name: static[string], classes: static[seq[string]], arg: typed): untyped =
+  echo "Looking for \"" & $arg.getTypeInst.toStrLit & "\""
+  if testUI.customWidgets.hasKey($arg.getTypeInst.toStrLit):
+    echo "Found \"" & $arg.getTypeInst.toStrLit & "\""
+    if testUI.customWidgets[$arg.getTypeInst.toStrLit].showProc != nil:
+      echo "\"" & $arg.getTypeInst.toStrLit & "\" has showProc"
+      return testUI.customWidgets[$arg.getTypeInst.toStrLit].showProc
   testUI.widgets[name] =
     UIWidget(
       variableType: arg.getType.typeKind,
