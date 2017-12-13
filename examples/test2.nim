@@ -46,6 +46,7 @@ createShowWidget("test1", @[], a)
 createShowWidget("test7", @[], tupl.z)
 createShowWidget("test2", @[], b)
 createEditWidget("test6", @["test", "class"], tupl.z, test)
+createEditWidget("test9", @["test", "class"], tupl.z, test, @["Hello","World"])
 createEditWidget("test3", @[], str, nil)
 createCallWidget("test4", @["buttons"], str, test)
 createCallWidget("test8", @["buttons"], str, test)
@@ -66,6 +67,7 @@ col2.addWidget("test3")
 col2.addWidget("test4")
 col2.addWidget("test8")
 col2.addWidget("test5")
+col2.addWidget("test9")
 
 # Create the UI. Notice  that createUI takes a block which is guaranteed to be in the same scope as the generated UI code
 createUI:

@@ -13,6 +13,7 @@ type
     generatedSym: NimNode
     variableType: NimTypeKind
     variableSym: NimNode
+    optionsSym: NimNode
     callback: NimNode
   UserInterface = object
     widgets: OrderedTable[string, UIWidget]
@@ -53,11 +54,12 @@ macro createShowWidget(name: static[string], classes: static[seq[string]], arg: 
     )
   addToClasses(name, classes)
 
-macro createEditWidget(name: static[string], classes: static[seq[string]], arg: typed, callback: UICallback): untyped =
+macro createEditWidget(name: static[string], classes: static[seq[string]], arg: typed, callback: UICallback, options: typed = nil): untyped =
   testUI.widgets[name] =
     UIWidget(
       variableType: arg.getType.typeKind,
       variableSym: arg,
+      optionsSym: options,
       kind: UIKind.edit,
       generatedSym: genSym(nskVar),
       callback: callback

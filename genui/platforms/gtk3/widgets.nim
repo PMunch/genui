@@ -25,6 +25,7 @@ macro createUI(after: untyped = nil): untyped =
       s2 = elem.variableSym
       classes = testUI.members[name]
       cb = elem.callback
+      optionsSym = elem.optionsSym
     case elem.kind:
       of UIKind.call:
         case elem.variableType:
@@ -85,19 +86,39 @@ macro createUI(after: untyped = nil): untyped =
               cbBlock.add(quote do:
                 `cb`()
               )
-            result.add(quote do:
-              var `s1` = gtk.newSpinButton(cdouble(`s2`.low), cdouble(`s2`.high), 1)
-              gtk.setValue(`s1`, cdouble(`s2`))
-              discard gobject.gSignalConnect(`s1`, "value-changed", gobject.gCALLBACK(
-                proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
-                  `s2` = gtk.getValueAsInt(`s1`)
-                  `cbBlock`
-                  postCallbackUpdate()
-              ), nil)
-            )
-            postCallbackUpdates.add(quote do:
-              gtk.setValue(`s1`,cdouble(`s2`))
-            )
+            if optionsSym == nil:
+              result.add(quote do:
+                var `s1` = gtk.newSpinButton(cdouble(`s2`.low), cdouble(`s2`.high), 1)
+                gtk.setValue(`s1`, cdouble(`s2`))
+                discard gobject.gSignalConnect(`s1`, "value-changed", gobject.gCALLBACK(
+                  proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
+                    `s2` = gtk.getValueAsInt(`s1`)
+                    `cbBlock`
+                    postCallbackUpdate()
+                ), nil)
+              )
+              postCallbackUpdates.add(quote do:
+                gtk.setValue(`s1`,cdouble(`s2`))
+              )
+            else:
+              echo "Creating new Combo Box"
+              result.add(quote do:
+                var `s1` = gtk.newComboBoxText()
+                for text in `optionsSym`:
+                  gtk.append(`s1`, nil, text)
+                discard gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
+                  proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
+                    `s2` = gtk.getActive(`s1`)
+                    `cbBlock`
+                    postCallbackUpdate()
+                ), nil)
+              )
+              postCallbackUpdates.add(quote do:
+                gtk.removeAll(`s1`)
+                for text in `optionsSym`:
+                  gtk.append(`s1`, nil, text)
+                gtk.setActive(`s1`, `s2`.cint)
+              )
           else:
             echo elem.variableType
       else: continue
