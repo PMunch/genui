@@ -1,12 +1,9 @@
-include genui
-include genuiLayout
+include "../genui/genui"
 when defined(js):
-  include genuiLayoutKarax
-  include genuiWidgetsKarax
+  include "../genui/platforms/karax"
   import karax / [karax, vdom]
 else:
-  include genuiLayoutGtk
-  include genuiWidgetsGtk
+  include "../genui/platforms/gtk3"
   import oldgtk3/ [gtk, gdk, gio, gobject, glib]
 
 # Set up some basic types that will be shown in the UI
@@ -29,12 +26,20 @@ when not defined(js):
     provider = newCssProvider()
     display = displayGetDefault()
     screen = getDefaultScreen(display)
-    myCssFile = "mystyle.css"
+    myCssFile = "gtk3/mystyle.css"
     error: GError = nil
 
   styleContextAddProviderForScreen(screen, cast[StyleProvider](provider), STYLE_PROVIDER_PRIORITY_APPLICATION)
   discard provider.loadFromFile(newFileForPath(myCssFile), error)
   provider.objectUnref()
+
+dumpTree:
+  row:
+    column(6):
+      "test" show: a / ["red"]
+      "test6" edit: tupl.z -> test / ["test", "class"]
+    column(6):
+      "test8" call: str -> test / ["buttons"]
 
 # Creating our basic widgets and assigning them to classes for styling, some are also given a callback
 createShowWidget("test", @["red"], a)
