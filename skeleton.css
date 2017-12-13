@@ -170,6 +170,7 @@ button,
 input[type="submit"],
 input[type="reset"],
 input[type="button"] {
+  width: 100%;
   display: inline-block;
   height: 38px;
   padding: 0 30px;
@@ -234,6 +235,7 @@ input[type="url"],
 input[type="password"],
 textarea,
 select {
+  width: 100%;
   height: 38px;
   padding: 6px 10px; /* The 6px vertically centers text on FF, ignored by Webkit */
   background-color: #fff;

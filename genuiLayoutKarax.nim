@@ -34,9 +34,10 @@ macro createLayout(layout: static[UILayout]): untyped =
         for child in layout.children:
           result.add generateLayer(child)
       of Widget:
+        result = newStmtList()
         result.add(layout.widget)
       of Column:
-        let size = skeletonSizes[layout.width-1] 
+        let size = skeletonSizes[layout.width-1]
         result = nnkCall.newTree(
           newIdentNode(!"tdiv"),
           nnkExprEqExpr.newTree(
@@ -49,7 +50,8 @@ macro createLayout(layout: static[UILayout]): untyped =
 
   var layoutAst = generateLayer(layout.root)
   result = quote do:
-    return karax.buildHtml(tdiv):
-      `layoutAst`
+    return karaxdsl.buildHtml(tdiv):
+      tdiv(class = "container"):
+        `layoutAst`
 
   echo result.toStrLit
