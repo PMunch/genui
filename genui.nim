@@ -15,12 +15,31 @@ type
     callback: NimNode
   UserInterface = object
     widgets: OrderedTable[string, UIWidget]
+    classes: Table[string, seq[string]]
 
 static:
-  var testUI = UserInterface(widgets: initOrderedTable[string, UIWidget]())
+  var testUI = UserInterface(widgets: initOrderedTable[string, UIWidget](), classes: initTable[string, seq[string]]())
 
-macro createShowWidget(name: static[string], arg: typed): untyped =
-  #echo arg.treeRepr
+macro getByName(name: static[string]): untyped =
+  let sym = testUI.widgets[name].generatedSym
+  return sym
+
+macro getByClass(class: static[string]): untyped =
+  var list = nnkBracket.newTree()
+  for name in testUI.classes[class]:
+    echo name
+    list.add(testUI.widgets[name].generatedSym)
+  return nnkPrefix.newTree(newIdentNode("@"), list)
+
+proc addToClasses(name: string, classes: seq[string]) {.compileTime.} =
+  if classes != nil:
+    for class in classes:
+      if not testUI.classes.hasKey(class):
+        testUI.classes[class] = @[name]
+      else:
+        testUI.classes[class].add(name)
+
+macro createShowWidget(name: static[string], classes: static[seq[string]], arg: typed): untyped =
   testUI.widgets[name] =
     UIWidget(
       variableType: arg.getType.typeKind,
@@ -28,9 +47,9 @@ macro createShowWidget(name: static[string], arg: typed): untyped =
       kind: UIKind.show,
       generatedSym: genSym(nskVar)
     )
+  addToClasses(name, classes)
 
-macro createEditWidget(name: static[string], arg: typed, callback: UICallback): untyped =
-  #echo arg.treeRepr
+macro createEditWidget(name: static[string], classes: static[seq[string]], arg: typed, callback: UICallback): untyped =
   testUI.widgets[name] =
     UIWidget(
       variableType: arg.getType.typeKind,
@@ -39,8 +58,9 @@ macro createEditWidget(name: static[string], arg: typed, callback: UICallback): 
       generatedSym: genSym(nskVar),
       callback: callback
     )
+  addToClasses(name, classes)
 
-macro createCallWidget(name: static[string], arg: typed, callback: UICallback): untyped =
+macro createCallWidget(name: static[string], classes: static[seq[string]], arg: typed, callback: UICallback): untyped =
   testUI.widgets[name] =
     UIWidget(
       kind: UIKind.call,
@@ -49,6 +69,7 @@ macro createCallWidget(name: static[string], arg: typed, callback: UICallback): 
       variableType: arg.getType.typeKind,
       callback: callback
     )
+  addToClasses(name, classes)
 
 #template initUI()
 #template createUI()

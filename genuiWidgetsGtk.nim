@@ -1,24 +1,26 @@
 import macros
-from gtk3 import nil
-from gobject import nil
-from glib import nil
+from oldgtk3/gtk import nil
+from oldgtk3/gobject import nil
+from oldgtk3/glib import nil
 
 template initUI() =
-  gtk3.initWithArgv()
+  gtk.initWithArgv()
 
 macro createUI(): untyped =
   result = newStmtList()
   var callbackList = newStmtList()
+  var postCallbackUpdates = newStmtList()
   let
     windowSym = genSym(nskLet)
     boxSym = genSym(nskLet)
   result.add(quote do:
-    proc setValue(label: gtk3.Label, value: string) =
-      gtk3.setText(label, cstring(value))
-    proc setValue(button: gtk3.Button, value: string) =
-      gtk3.setLabel(button, cstring(value))
-    let `windowSym` = gtk3.newWindow()
-    let `boxSym` = gtk3.newBox(gtk3.Orientation.VERTICAL, 5)
+    proc setValue(label: gtk.Label, value: string) =
+      gtk.setText(label, cstring(value))
+    proc setValue(button: gtk.Button, value: string) =
+      gtk.setLabel(button, cstring(value))
+    proc postCallbackUpdate()
+    let `windowSym` = gtk.newWindow()
+    let `boxSym` = gtk.newBox(gtk.Orientation.VERTICAL, 5)
   )
   for elem in testUI.widgets.values:
     #echo elem.variableType.treeRepr
@@ -30,13 +32,22 @@ macro createUI(): untyped =
           cb = elem.callback
         case elem.variableType:
           of ntyString, ntyInt:
+            var cbBlock = newStmtList()
+            if cb != nil:
+              cbBlock.add(quote do:
+                `cb`()
+              )
             result.add(quote do:
-              var `s1` = gtk3.newButton($`s2`)
-              gtk3.add(`boxSym`, `s1`)
+              var `s1` = gtk.newButton($`s2`)
+              gtk.add(`boxSym`, `s1`)
               discard gobject.gSignalConnect(`s1`, "clicked", gobject.gCALLBACK(
-                proc (widget: gtk3.Widget, data: glib.Gpointer) {.cdecl.}  =
-                  `cb`()
+                proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
+                  `cbBlock`
+                  postCallbackUpdate()
               ), nil)
+            )
+            postCallbackUpdates.add(quote do:
+              `s1`.setValue($`s2`)
             )
           else: discard
       of UIKind.show:
@@ -46,8 +57,11 @@ macro createUI(): untyped =
               s1 = elem.generatedSym
               s2 = elem.variableSym
             result.add(quote do:
-              var `s1` = gtk3.newLabel(cstring($`s2`))
-              gtk3.add(`boxSym`, `s1`)
+              var `s1` = gtk.newLabel(cstring($`s2`))
+              gtk.add(`boxSym`, `s1`)
+            )
+            postCallbackUpdates.add(quote do:
+              `s1`.setValue($`s2`)
             )
           else:
             echo elem.variableType
@@ -58,62 +72,58 @@ macro createUI(): untyped =
           cb = elem.callback
         case elem.variableType:
           of ntyString:
+            var cbBlock = newStmtList()
+            if cb != nil:
+              cbBlock.add(quote do:
+                `cb`()
+              )
             result.add(quote do:
-              var `s1` = gtk3.newEntry()
-              gtk3.setText(`s1`, `s2`)
-              gtk3.add(`boxSym`, `s1`)
+              var `s1` = gtk.newEntry()
+              gtk.setText(`s1`, `s2`)
+              gtk.add(`boxSym`, `s1`)
               discard gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
-                proc (widget: gtk3.Widget, data: glib.Gpointer) {.cdecl.} =
-                  `s2` = $gtk3.getText(`s1`)
-                  `cb`()
+                proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.} =
+                  `s2` = $gtk.getText(`s1`)
+                  `cbBlock`
+                  postCallbackUpdate()
               ), nil)
             )
-            for widgetDef in testUI.widgets.values:
-              if widgetDef.variableSym == elem.variableSym and widgetDef.generatedSym != elem.generatedSym:
-                let s3 = widgetDef.generatedSym
-                callbackList.add(quote do:
-                  discard gobject.gSignalConnect(`s1`, "changed", gobject.gCALLBACK(
-                    proc (widget: gtk3.Widget, data: glib.Gpointer) {.cdecl.}  =
-                      setValue(`s3`, $gtk3.getText(`s1`))
-                  ), nil)
-                )
+            postCallbackUpdates.add(quote do:
+              gtk.setText(`s1`,$`s2`)
+            )
           of ntyInt:
+            var cbBlock = newStmtList()
+            if cb != nil:
+              cbBlock.add(quote do:
+                `cb`()
+              )
             result.add(quote do:
-              var `s1` = gtk3.newSpinButton(0, cdouble(`s2`.high), 1)
-              gtk3.setValue(`s1`, cdouble(`s2`))
-              gtk3.add(`boxSym`, `s1`)
+              var `s1` = gtk.newSpinButton(cdouble(`s2`.low), cdouble(`s2`.high), 1)
+              gtk.setValue(`s1`, cdouble(`s2`))
+              gtk.add(`boxSym`, `s1`)
               discard gobject.gSignalConnect(`s1`, "value-changed", gobject.gCALLBACK(
-                proc (widget: gtk3.Widget, data: glib.Gpointer) {.cdecl.}  =
-                  `s2` = gtk3.getValueAsInt(`s1`)
-                  `cb`()
+                proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.}  =
+                  `s2` = gtk.getValueAsInt(`s1`)
+                  `cbBlock`
+                  postCallbackUpdate()
               ), nil)
             )
-            for widgetDef in testUI.widgets.values:
-              if widgetDef.variableSym == elem.variableSym and widgetDef.generatedSym != elem.generatedSym:
-                let s3 = widgetDef.generatedSym
-                callbackList.add(quote do:
-                  discard gobject.gSignalConnect(`s1`, "value-changed", gobject.gCALLBACK(
-                    proc (widget: gtk3.Widget, data: glib.Gpointer) {.cdecl.}  =
-                      setValue(`s3`, $gtk3.getValueAsInt(`s1`))
-                  ), nil)
-                )
+            postCallbackUpdates.add(quote do:
+              gtk.setValue(`s1`,cdouble(`s2`))
+            )
           else:
             echo elem.variableType
       else: continue
-    #result.add(
-    #  nnkAsgn.newTree(
-    #    elem.variableSym,
-    #    newLit(42)
-    #  )
-    #)
   result.add(callbackList)
   result.add(quote do:
-    gtk3.add(`windowSym`, `boxSym`)
-    gtk3.showAll(`windowSym`)
-    discard gobject.gSignalConnect(`windowSym`, "destroy", gobject.gCALLBACK(gtk3.mainQuit), nil)
+    gtk.add(`windowSym`, `boxSym`)
+    gtk.showAll(`windowSym`)
+    discard gobject.gSignalConnect(`windowSym`, "destroy", gobject.gCALLBACK(gtk.mainQuit), nil)
+    proc postCallbackUpdate() =
+      `postCallbackUpdates`
   )
   echo result.toStrLit
 
 template startUI() =
-  gtk3.main()
+  gtk.main()
 

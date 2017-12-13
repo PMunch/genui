@@ -1,5 +1,8 @@
 include genui
-include genuiWidgetsGtk
+when defined(js):
+  include genuiWidgetsKarax
+else:
+  include genuiWidgetsGtk
 
 var
   a: int = 10
@@ -8,19 +11,20 @@ var
   tupl = (z: 10, x: "Hello")
 
 proc test() =
-  echo "This is a test"
+  #echo "This is a test"
   b = 10.3
-  echo tupl.z
+  #echo tupl.z
 
 initUI()
 
-createShowWidget("test", a)
-createShowWidget("test1", a)
-createShowWidget("test2", b)
-createEditWidget("test3", tupl.z, test)
-createEditWidget("test3", str, test)
-createCallWidget("test4", str, test)
-createShowWidget("test5", str)
+createShowWidget("test", @[], a)
+createShowWidget("test1", @[], a)
+createShowWidget("test7", @[], tupl.z)
+createShowWidget("test2", @[], b)
+createEditWidget("test6", @[], tupl.z, nil)
+createEditWidget("test3", @[], str, nil)
+createCallWidget("test4", @[], str, test)
+createShowWidget("test5", @[], str)
 
 #let vert = createLayoutVertical("test3", "test4")
 #createLayoutHorizontal("test", "test1", "test2", vert)
@@ -29,8 +33,8 @@ createShowWidget("test5", str)
 
 createUI()
 
-echo a
-echo b
+#echo a
+#echo b
 
 startUI()
 
