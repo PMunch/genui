@@ -2,21 +2,30 @@ import macros
 
 type
   ContainerKind = enum
-    Row, Column
+    Row, Column, Widget
   UIContainer = object
-    children: seq[NimNode]
-    width: range[1..12]
-    kind: ContainerKind
+    children: seq[UIContainer]
+    case kind: ContainerKind
+      of Column:
+        width: range[1..12]
+        scroll: bool
+      of Row:
+        expand: bool
+      of Widget:
+        widget: NimNode
   UILayout = object
-    containers: seq[UIContainer]
+    root: UIContainer
 
 proc initUILayout(): UILayout {.compileTime.} =
   UILayout(containers: @[])
 
-proc addRow(layout: var UILayout): UIContainer =
-  result = UIContainer(children: @[], width: 12, kind: Row)
-  layout.containers.add(result)
+proc addRow(layout: var UIContainer, expand: bool): UIContainer {.compileTime.} =
+  result = UIContainer(children: @[], kind: Row, expand: expand)
+  layout.children.add(result)
 
-proc addColumn(layout: var UILayout, width: range[1..12]) =
-  layout.containters.add(UIContainer(children: @[], width: width, kind: Column)
+proc addColumn(layout: var UIContainer, width: range[1..12], scroll: bool): UIContainer {.compileTime.} =
+  result = UIContainer(children: @[], width: width, kind: Column, scroll: scroll)
+  layout.children.add(result)
 
+proc addWidget(layout: var UIContainer, widget: NimNode) {.compileTime.} =
+  layout.children.add(UIContainer(children: nil, kind: Widget, widget: widget)
