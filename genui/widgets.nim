@@ -4,7 +4,7 @@ import sequtils
 
 type
   UICallback = proc()
-  UIKind = enum
+  UIKind {.pure.} = enum
     show,
     edit,
     call
@@ -29,7 +29,6 @@ macro getByName(name: static[string]): untyped =
 macro getByClass(class: static[string]): untyped =
   var list = nnkBracket.newTree()
   for name in testUI.classes[class]:
-    echo name
     list.add(testUI.widgets[name].generatedSym)
   return nnkPrefix.newTree(newIdentNode("@"), list)
 

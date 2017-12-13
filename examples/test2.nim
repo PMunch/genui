@@ -5,7 +5,6 @@ when defined(js):
 else:
   include "../genui/platforms/gtk3"
   import oldgtk3/ [gtk, gdk, gio, gobject, glib]
-
 # Set up some basic types that will be shown in the UI
 var
   a: int = 10
@@ -58,31 +57,34 @@ var
   row1 {.compileTime.} = layout.addRow(true)
   col1 {.compileTime.} = row1.addColumn(6,false)
   col2 {.compiletime.}  = row1.addColumn(6,false)
-col1.addWidget(getByName("test"))
-col1.addWidget(getByName("test1"))
-col1.addWidget(getByName("test7"))
-col1.addWidget(getByName("test2"))
-col2.addWidget(getByName("test6"))
-col2.addWidget(getByName("test3"))
-col2.addWidget(getByName("test4"))
-col2.addWidget(getByName("test8"))
-col2.addWidget(getByName("test5"))
+col1.addWidget("test")
+col1.addWidget("test1")
+col1.addWidget("test7")
+col1.addWidget("test2")
+col2.addWidget("test6")
+col2.addWidget("test3")
+col2.addWidget("test4")
+col2.addWidget("test8")
+col2.addWidget("test5")
 
 # Create the UI. Notice  that createUI takes a block which is guaranteed to be in the same scope as the generated UI code
 createUI:
   # Create a new callback
   proc newCallback() =
     echo "Hello from the new callback!"
+    getByName("test1").show()
   # Get all elements from a given class, type is automatically recognised based on compile target
   var buttons = getByClass("buttons")
-  for button in buttons:
+  for button in buttons.mitems:
     # Do some platform specific callback attachment here
     when not defined(js):
       discard button.gSignalConnect("clicked", gCallback(newCallback), nil)
     else:
-      button.addEventHandler(EventKind.onclick, newCallback, kxi)
+      button.widget.addEventHandler(EventKind.onclick, newCallback, kxi)
   # Create the code for the layout we defined earlier. Must happen here to be in the correct scope
   layout.createLayout()
 
+getByName("test4").disable()
+getByName("test1").hide()
 # Hand over control to the UI framework
 startUI()

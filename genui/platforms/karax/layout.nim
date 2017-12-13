@@ -38,7 +38,13 @@ macro createLayout(layout: static[UILayout]): untyped =
           result.add generateLayer(child)
       of Widget:
         result = newStmtList()
-        result.add(layout.widget)
+        #result.add(nnkDotExpr.newTree(testUI.widgets[layout.widget].generatedSym,newIdentNode("widget")))
+        let sym = testUI.widgets[layout.widget].generatedSym
+        result.add(quote do:
+          if `sym`.shown:
+            `sym`.widget
+        )
+          
       of Column:
         let size = sizeClasses[layout.width-1]
         result = nnkCall.newTree(

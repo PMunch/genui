@@ -26,7 +26,7 @@ macro createLayout(layout: static[UILayout]): untyped =
             gtk.attach(`sym`, gtk.newLabel(""), `start`, 0, `width`, 1)
           )
       of Widget:
-        sym = layout.widget
+        sym = testUI.widgets[layout.widget].generatedSym
         result.add(quote  do:
           gtk.add(`oldSym`, `sym`)
         )

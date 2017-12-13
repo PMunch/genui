@@ -6,6 +6,9 @@ from karax/karaxdsl import nil
 #import karax / [karax, vdom, kdom, karaxdsl]
 from strutils import nil
 
+static:
+  var KaraxWidgetWrapper = genSym(nskType)
+
 template initUI() =
   discard
 
@@ -29,15 +32,15 @@ macro createUI(after: untyped = nil): untyped =
             var cbBlock = newStmtList()
             if cb != nil:
               cbBlock.add(quote do:
-                karax.addEventHandler(`s1`, vdom.EventKind.onclick, `cb`, karax.kxi)
+                karax.addEventHandler(`s1`.widget, vdom.EventKind.onclick, `cb`, karax.kxi)
               )
             innerblock.add(quote do:
-              `s1` = vdom.tree(vdom.VNodeKind.button)
-              `cbBlock`
-              vdom.add(`s1`, vdom.text($`s2`))
-            )
-            layoutblock.add(quote do:
-              tdiv(`s1`)
+              `s1`.widget = vdom.tree(vdom.VNodeKind.button)
+              if `s1`.active:
+                `cbBlock`
+              else:
+                vdom.setAttr(`s1`.widget, "disabled")
+              vdom.add(`s1`.widget, vdom.text($`s2`))
             )
           else:
             discard
@@ -47,33 +50,36 @@ macro createUI(after: untyped = nil): untyped =
             var cbBlock = newStmtList()
             if cb != nil:
               cbBlock.add(quote do:
-                karax.addEventHandler(`s1`, vdom.EventKind.oninput, `cb`, karax.kxi)
+                karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, `cb`, karax.kxi)
               )
             innerblock.add(quote do:
-              `s1` = vdom.tree(vdom.VNodeKind.input)
-              vdom.setAttr(`s1`, "type", "text")
-              `s1`.text = `s2`
-              `cbBlock`
-              karax.addEventHandler(`s1`, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
+              `s1`.widget = vdom.tree(vdom.VNodeKind.input)
+              vdom.setAttr(`s1`.widget, "type", "text")
+              `s1`.widget.text = `s2`
+              if `s1`.active:
+                `cbBlock`
+              else:
+                vdom.setAttr(`s1`.widget, "disabled")
+              karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
                 `s2` = $vdom.value(n)
               , karax.kxi)
-            )
-            layoutblock.add(quote do:
-              tdiv(`s1`)
             )
           of ntyInt:
             var cbBlock = newStmtList()
             if cb != nil:
               cbBlock.add(quote do:
-                karax.addEventHandler(`s1`, vdom.EventKind.oninput, `cb`, karax.kxi)
+                karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, `cb`, karax.kxi)
               )
             innerblock.add(quote do:
-              `s1` = vdom.tree(vdom.VNodeKind.input)
-              `s1`.text = $`s2`
-              vdom.setAttr(`s1`, "type", "number")
-              vdom.setAttr(`s1`, "step", "1")
-              `cbBlock`
-              karax.addEventHandler(`s1`, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
+              `s1`.widget = vdom.tree(vdom.VNodeKind.input)
+              `s1`.widget.text = $`s2`
+              vdom.setAttr(`s1`.widget, "type", "number")
+              vdom.setAttr(`s1`.widget, "step", "1")
+              if `s1`.active:
+                `cbBlock`
+              else:
+                vdom.setAttr(`s1`.widget, "disabled")
+              karax.addEventHandler(`s1`.widget, vdom.EventKind.oninput, proc (ev: kdom.Event, n: vdom.VNode) =
                 try:
                   `s2` = strutils.parseInt($vdom.value(n))
                 except ValueError:
@@ -84,33 +90,39 @@ macro createUI(after: untyped = nil): untyped =
                   n.value = $`s2`
               , karax.kxi)
             )
-            layoutblock.add(quote do:
-              tdiv(`s1`)
-            )
           else: discard
       of UIKind.show:
         case elem.variableType:
           of ntyInt, ntyFloat, ntyString:
             innerblock.add(quote do:
-              `s1` = vdom.tree(vdom.VNodeKind.tdiv, vdom.text($`s2`))
-            )
-            layoutblock.add(quote do:
-              `s1`
+              `s1`.widget = vdom.tree(vdom.VNodeKind.tdiv, vdom.text($`s2`))
             )
           else:
             discard
     innerblock.add(quote do:
-      vdom.setAttr(`s1`, "id", `name`)
-      vdom.setAttr(`s1`, "class", `classes`)
+      vdom.setAttr(`s1`.widget, "id", `name`)
+      vdom.setAttr(`s1`.widget, "class", `classes`)
     )
     outerblock.add(quote do:
-      var `s1`:vdom.VNode
+      var `s1` = `KaraxWidgetWrapper`(widget: nil, active: true, shown: true)
     )
   var afterBlock = after
   if after == nil:
     afterBlock = newStmtList()
 
   result = quote do:
+    type `KaraxWidgetWrapper` = ref object
+      widget: vdom.VNode
+      active: bool
+      shown: bool
+    proc hide(elem: `KaraxWidgetWrapper`) =
+      elem.shown = false
+    proc show(elem: `KaraxWidgetWrapper`) =
+      elem.shown = true
+    proc disable(elem: `KaraxWidgetWrapper`) =
+      elem.active = false
+    proc enable(elem: `KaraxWidgetWrapper`) =
+      elem.active = true
     `outerblock`
     proc createDom(): vdom.VNode =
       `innerblock`

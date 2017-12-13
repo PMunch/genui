@@ -112,6 +112,10 @@ macro createUI(after: untyped = nil): untyped =
       )
   result.add(callbackList)
   result.add(quote do:
+    proc disable(elem: gtk.Widget) =
+      gtk.setSensitive(elem, false)
+    proc enable(elem: gtk.Widget) =
+      gtk.setSensitive(elem, true)
     proc postCallbackUpdate() =
       `postCallbackUpdates`
   )
