@@ -123,6 +123,12 @@ macro createUI(after: untyped = nil): untyped =
     gtk.add(`windowSym`, `boxSym`)
     gtk.showAll(`windowSym`)
     discard gobject.gSignalConnect(`windowSym`, "destroy", gobject.gCALLBACK(gtk.mainQuit), nil)
+    discard gobject.gSignalConnect(`windowSym`, "size-allocate", gobject.gCALLBACK(
+      proc (widget: gtk.Widget, data: glib.Gpointer) {.cdecl.} =
+        var w, h: cint
+        gtk.getSize(`windowSym`, w, h)
+        echo "Window resize (" & $w & ", " & $h & ")"
+    ), nil)
     proc postCallbackUpdate() =
       `postCallbackUpdates`
   )

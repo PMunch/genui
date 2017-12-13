@@ -55,7 +55,6 @@ createUI:
     when not defined(js):
       discard button.gSignalConnect("clicked", gCallback(newCallback), nil)
     else:
-      if button != nil:
-        button.addEventHandler(EventKind.onclick, newCallback, kxi)
+      button.addEventHandler(EventKind.onclick, newCallback, kxi)
 
 startUI()
