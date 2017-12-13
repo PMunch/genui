@@ -5,7 +5,7 @@ from oldgtk3/glib import nil
 
 macro createLayout(layout: static[UILayout]): untyped =
   result = newStmtList()
-  macro generateLayer(oldSym: NimNode, layout: static[UIContainer]): untyped =
+  proc generateLayer(oldSym: NimNode, layout: UIContainer): untyped =
     result = newStmtList()
     var sym: NimNode
     case layout.kind:
@@ -40,13 +40,13 @@ macro createLayout(layout: static[UILayout]): untyped =
           gtk.attach(`oldSym`, `sym`, `start`, 0, `width`, 1)
         )
         for child in layout.children:
-          generateLayer(sym, child)
+          result.add generateLayer(sym, child)
 
   let windowSym = genSym(nskVar)
   result.add(quote do:
     let `windowSym` = gtk.newWindow()
   )
-  generateLayer(windowSym, layout.root)
+  result.add generateLayer(windowSym, layout.root)
   result.add(quote do:
     `windowSym`.showAll()
   )
