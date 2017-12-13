@@ -3,7 +3,7 @@ from oldgtk3/gtk import nil
 from oldgtk3/gobject import nil
 from oldgtk3/glib import nil
 
-macro createLayout(layout: static[UILayout]): untyped =
+macro createLayout(): untyped =
   result = newStmtList()
   proc generateLayer(oldSym: NimNode, layout: UIContainer): untyped =
     result = newStmtList()
@@ -46,7 +46,7 @@ macro createLayout(layout: static[UILayout]): untyped =
   result.add(quote do:
     let `windowSym` = gtk.newWindow()
   )
-  result.add generateLayer(windowSym, layout.root)
+  result.add generateLayer(windowSym, testLayout.root)
   result.add(quote do:
     `windowSym`.showAll()
   )

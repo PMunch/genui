@@ -18,13 +18,16 @@ type
   UILayout = object
     root: UIContainer
 
-proc initUILayout(): UILayout {.compileTime.} =
-  UILayout(root: nil)
+static:
+  var testLayout = UILayout(root: nil)
 
-proc addRow(layout: var UILayout, expand: bool): UIContainer {.compileTime.} =
-  assert(layout.root == nil, "Cannot add more than one row to the root of a layout")
+#proc initUILayout(): UILayout {.compileTime.} =
+#  UILayout(root: nil)
+
+proc addRow(expand: bool): UIContainer {.compileTime.} =
+  assert(testLayout.root == nil, "Cannot add more than one row to the root of a layout")
   result = UIContainer(children: @[], kind: Row, expand: expand, usedSize: 0)
-  layout.root = result
+  testLayout.root = result
 
 proc addRow(layout: var UIContainer, expand: bool): UIContainer {.compileTime.} =
   assert(layout.kind == Column, "Rows must be added to columns")

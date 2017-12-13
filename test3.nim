@@ -9,12 +9,11 @@ var
   button = newButton("Hi there")
 
 static:
-  var layout = initUILayout()
   var
-    row1 = layout.addRow(true)
+    row1 = addRow(true)
     col1 = row1.addColumn(6,false)
     col2 = row1.addColumn(6,false)
   col1.addWidget(label)
   col2.addWidget(button)
-layout.createLayout()
+createLayout()
 gtk.main()
