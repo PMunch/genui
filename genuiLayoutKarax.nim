@@ -5,7 +5,7 @@ from karax/kdom import nil
 from karax/karaxdsl import nil
 
 static:
-  var skeletonSizes = @[
+  var sizeClasses = @[
     "one column",
     "two columns",
     "three columns",
@@ -19,6 +19,9 @@ static:
     "eleven columns",
     "twelve columns"
   ]
+
+proc setSizeClasses(newClasses: seq[string]) {.compileTime.} =
+  sizeClasses = newClasses
 
 macro createLayout(layout: static[UILayout]): untyped =
   proc generateLayer(layout: UIContainer): untyped =
@@ -37,7 +40,7 @@ macro createLayout(layout: static[UILayout]): untyped =
         result = newStmtList()
         result.add(layout.widget)
       of Column:
-        let size = skeletonSizes[layout.width-1]
+        let size = sizeClasses[layout.width-1]
         result = nnkCall.newTree(
           newIdentNode(!"tdiv"),
           nnkExprEqExpr.newTree(
