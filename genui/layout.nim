@@ -43,4 +43,4 @@ proc addColumn(layout: var UIContainer, width: range[1..12], scroll: bool): UICo
 
 macro addWidget(layout: static[var UIContainer], widget: static[string]): untyped =
   #assert(layout.kind == Column, "Widgets can only be added to columns")
-  layout.children.add(UIContainer(children: nil, kind: Widget, widget: widget))
+  layout.children.add(UIContainer(children: @[], kind: Widget, widget: widget))

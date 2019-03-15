@@ -5,7 +5,7 @@ from oldgtk3/glib import nil
 
 macro createLayout(layout: static[UILayout]): untyped =
   result = newStmtList()
-  proc generateLayer(oldSym: NimNode, layout: UIContainer): untyped =
+  proc generateLayer(oldSym: NimNode, layout: UIContainer): NimNode =
     result = newStmtList()
     var sym: NimNode
     case layout.kind:

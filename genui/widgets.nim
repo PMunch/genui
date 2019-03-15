@@ -25,13 +25,13 @@ type
     members: Table[string, seq[string]]
     customWidgets: Table[string, UICustomWidget]
 
-static:
-  var testUI =
-    UserInterface(
-      widgets: initOrderedTable[string, UIWidget](),
-      classes: initTable[string, seq[string]](),
-      members: initTable[string, seq[string]](),
-      customWidgets: initTable[string, UICustomWidget]())
+#static:
+var testUI* {.compileTime.} =
+  UserInterface(
+    widgets: initOrderedTable[string, UIWidget](),
+    classes: initTable[string, seq[string]](),
+    members: initTable[string, seq[string]](),
+    customWidgets: initTable[string, UICustomWidget]())
 
 macro getByName(name: static[string]): untyped =
   let sym = testUI.widgets[name].generatedSym
@@ -44,7 +44,7 @@ macro getByClass(class: static[string]): untyped =
   return nnkPrefix.newTree(newIdentNode("@"), list)
 
 proc addToClasses(name: string, classes: seq[string]) {.compileTime.} =
-  if classes != nil:
+  if classes.len > 0:
     for class in classes:
       if not testUI.classes.hasKey(class):
         testUI.classes[class] = @[name]
@@ -66,7 +66,7 @@ macro createShowWidget(name: static[string], classes: static[seq[string]], arg: 
     echo "Found \"" & $arg.getTypeInst.toStrLit & "\""
     if testUI.customWidgets[$arg.getTypeInst.toStrLit].showProc != nil:
       echo "\"" & $arg.getTypeInst.toStrLit & "\" has showProc"
-      return testUI.customWidgets[$arg.getTypeInst.toStrLit].showProc
+      #return testUI.customWidgets[$arg.getTypeInst.toStrLit].showProc
   testUI.widgets[name] =
     UIWidget(
       variableType: arg.getType.typeKind,

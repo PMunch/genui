@@ -19,16 +19,19 @@ macro createUI(after: untyped = nil): untyped =
   )
   for pair in testUI.widgets.pairs:
     echo "Generating widget for " & pair[0]
-    #if testUI.customWidgets.hasKey($pair[1].variableSym.getTypeInst.toStrLit):
-    #  echo "Custom Widget"
-    #  result.add(testUI.customWidgets[$pair[1].variableSym.getTypeInst.toStrLit](pair[1]))
-    if true:
+    if testUI.customWidgets.hasKey($pair[1].variableSym.getTypeInst.toStrLit):
+      echo "Custom Widget for type " & $pair[1].variableSym.getTypeInst.toStrLit
+      let key =  $pair[1].variableSym.getTypeInst.toStrLit
+      echo testUI.customWidgets[key].showProc[1].treeRepr
+      result.add(testUI.customWidgets[key].showProc[1])
+    #if true:
+    else:
       let
         name = pair[0]
         elem = pair[1]
         s1 = elem.generatedSym
         s2 = elem.variableSym
-        classes = testUI.members[name]
+        classes = testUI.members.getOrDefault(name, @[])
         cb = elem.callback
         optionsSym = elem.optionsSym
       case elem.kind:
@@ -155,7 +158,6 @@ macro createUI(after: untyped = nil): untyped =
                 )
             else:
               echo elem.variableType
-        else: continue
       var context = genSym(nskVar)
       result.add(quote do:
         gtk.setName(`s1`, `name`)
